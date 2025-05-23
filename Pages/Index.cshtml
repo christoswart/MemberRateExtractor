@@ -1,0 +1,73 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Member Rate Extractor</h1>
+    <p>Automation Web app with ASP.NET Core.</p>
+    <p></p>
+    <form method="post" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="excelFile">Upload Excel File:</label>
+            <input type="file" class="form-control-file" id="excelFile" name="excelFile" accept=".xlsx, .xls" />
+        </div>
+        <p></p>
+        <button type="submit" class="btn btn-primary">Upload</button>
+    </form>
+    <p></p>
+    
+    @if (Model.UploadMessage != null)
+    {
+        <div class="alert @(Model.UploadSuccess ? "alert-success" : "alert-danger") mt-3">
+            @Model.UploadMessage
+        </div>
+    }
+
+    <button type="button" class="btn btn-success mt-3" id="btnProcess">Process File</button>
+
+    <div id="processMessageContainer" class="mt-3">
+        @if (Model.ProcessMessage != null)
+        {
+            <div class="alert @(Model.ProcessSuccess ? "alert-success" : "alert-danger")">
+                @Model.ProcessMessage
+            </div>
+        }
+    </div>
+
+    <div id="downloadButtonContainer" class="mt-3">
+        @if (Model.ProcessedFilePath != null)
+        {
+            <a href="/Spreadsheets/@System.IO.Path.GetFileName(Model.ProcessedFilePath)" download class="btn btn-primary">Download Processed File</a>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById("btnProcess").addEventListener("click", function () {
+            fetch("/?handler=Process")
+                .then(response => response.json())
+                .then(data => {
+                    const messageContainer = document.getElementById("processMessageContainer");
+                    const downloadContainer = document.getElementById("downloadButtonContainer");
+
+                    if (data.success) {
+                        messageContainer.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+
+                        if (data.filePath) {
+                            const fileName = data.filePath.substring(data.filePath.lastIndexOf("\\") + 1); // Extract filename
+                            downloadContainer.innerHTML = '<a href="/Spreadsheets/' + fileName + '" download class="btn btn-primary">Download Processed File</a>';
+                        }
+                    } else {
+                        messageContainer.innerHTML = '<div class="alert alert-danger">' + data.message + '</div>';
+                        downloadContainer.innerHTML = ''; // Clear download button if processing fails
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                });
+        });
+    </script>
+}
